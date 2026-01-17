@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nour – Compagnon Spirituel</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Amiri+Quran&display=swap" rel="stylesheet">
+
+<style>
+body {
+    margin:0;
+    font-family:Poppins,sans-serif;
+    background:#0f172a;
+    color:white;
+}
+
+header {
+    padding:20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#020617;
+}
+
+button {
+    padding:10px 18px;
+    border:none;
+    border-radius:20px;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.btn {
+    background:#0ea5e9;
+    color:white;
+}
+
+.admin-badge {
+    background:gold;
+    color:black;
+    padding:5px 12px;
+    border-radius:20px;
+    font-weight:800;
+    margin-left:10px;
+}
+
+section {
+    padding:40px 20px;
+    max-width:1000px;
+    margin:auto;
+}
+
+input {
+    width:100%;
+    padding:12px;
+    margin:8px 0;
+    border-radius:10px;
+    border:none;
+}
+
+.hidden { display:none; }
+
+.quran {
+    font-family:"Amiri Quran", serif;
+    font-size:2rem;
+    direction:rtl;
+    line-height:2.5;
+    margin:20px 0;
+}
+
+@media(max-width:700px){
+    .quran{font-size:1.5rem;}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h2>Nour</h2>
+    <div id="userArea"></div>
+</header>
+
+<section id="auth">
+    <h2>Connexion / Inscription</h2>
+    <input id="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Mot de passe">
+    <button class="btn" onclick="register()">Créer un compte</button>
+    <button class="btn" onclick="login()">Connexion</button>
+</section>
+<section id="dashboard" class="hidden">
+    <h2>Tableau de bord <span id="adminBadge"></span></h2>
+    <p>Email : <span id="userEmail"></span></p>
+    <p>Utilisateurs inscrits : <span id="userCount"></span></p>
+
+    <h3>Lecture du Coran</h3>
+    <div class="quran">بِسْمِ ٱللّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</div>
+    <button class="btn" onclick="playQuran()">▶ Lecture vocale</button>
+
+    <h3>Qibla</h3>
+    <button class="btn" onclick="getLocation()">📍 Trouver la Qibla</button>
+    <p id="qiblaResult"></p>
+
+    <br>
+    <button onclick="logout()">Déconnexion</button>
+</section>
+
+<audio id="audio"></audio>
+
+<script>
+const ADMIN_EMAIL = "unjour121@gmail.com";
+
+/* UTILITAIRES */
+function getUsers(){ return JSON.parse(localStorage.getItem("users"))||[] }
+function saveUsers(u){ localStorage.setItem("users",JSON.stringify(u)) }
+function getSession(){ return JSON.parse(localStorage.getItem("session")) }
+
+/* AUTH */
+function register(){
+    const email=email.value, pass=password.value;
+    if(!email||!pass) return alert("Champs requis");
+    let users=getUsers();
+    if(users.find(u=>u.email===email)) return alert("Compte existant");
+    users.push({email,pass,role:email===ADMIN_EMAIL?"admin":"user"});
+    saveUsers(users);
+    alert("Compte créé");
+}
+
+function login(){
+    let users=getUsers();
+    let u=users.find(u=>u.email===email.value&&u.pass===password.value);
+    if(!u) return alert("Identifiants incorrects");
+    localStorage.setItem("session",JSON.stringify(u));
+    location.reload();
+}
+
+function logout(){
+    localStorage.removeItem("session");
+    location.reload();
+}
+
+/* SESSION */
+const session=getSession();
+if(session){
+    auth.classList.add("hidden");
+    dashboard.classList.remove("hidden");
+    userEmail.textContent=session.email;
+    userCount.textContent=getUsers().length;
+    if(session.role==="admin"){
+        adminBadge.innerHTML="ADMIN";
+        adminBadge.className="admin-badge";
+    }
+    userArea.innerHTML=`${session.email}`;
+}
+
+/* AUDIO CORAN */
+function playQuran(){
+    const a=document.getElementById("audio");
+    a.src="https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3";
+    a.play();
+}
+
+/* QIBLA */
+function getLocation(){
+navigator.geolocation.getCurrentPosition(pos=>{
+    const q=calcQibla(pos.coords.latitude,pos.coords.longitude);
+    qiblaResult.textContent="Direction Qibla : "+q.toFixed(1)+"°";
+},()=>alert("Localisation refusée"));
+}
+
+function calcQibla(lat,lon){
+    const kLat=21.4225*Math.PI/180;
+    const kLon=39.8262*Math.PI/180;
+    lat*=Math.PI/180; lon*=Math.PI/180;
+    const y=Math.sin(kLon-lon);
+    const x=Math.cos(lat)*Math.tan(kLat)-Math.sin(lat)*Math.cos(kLon-lon);
+    return (Math.atan2(y,x)*180/Math.PI+360)%360;
+}
+</script>
+
+</body>
+</html>
