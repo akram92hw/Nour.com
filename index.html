@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -560,4 +560,79 @@ function sendMessage(){
 
 function loadChat(){
     const to = document.getElementById("chatWith").value;
-    const history = document.getElementById("chat
+    const history = document.getElementById("chatHistory");
+    history.innerHTML = "";
+    const data = getUserData(session.email);
+    (data.messages[to] || []).forEach(m => {
+        let p = document.createElement("p");
+        p.textContent = `${m.from}: ${m.text}`;
+        history.appendChild(p);
+    });
+}
+
+/* OBJECTIFS */
+function loadGoals(){
+    const data = getUserData(session.email);
+    const goalsList = document.getElementById("goalsList");
+    goalsList.innerHTML = "";
+    data.goals.forEach(g => {
+        let li = document.createElement("li");
+        li.innerHTML = `${g.icon} ${g.name} - Progrès: <div class="progress-bar"><div class="progress-fill" style="width:${g.progress}%;"></div></div> ${g.progress}% / ${g.target}`;
+        goalsList.appendChild(li);
+    });
+}
+
+function createGoal(){
+    const name = document.getElementById("goalName").value.trim();
+    const target = parseInt(document.getElementById("goalTarget").value);
+    const icon = document.getElementById("goalIcon").value.trim();
+    if(!name || isNaN(target) || !icon) return alert("Champs requis");
+    let data = getUserData(session.email);
+    data.goals.push({name, target, icon, progress: 0});
+    saveUserData(session.email, data);
+    loadGoals();
+}
+
+/* ADMIN */
+function loadAdminPanel(){
+    const allUsers = document.getElementById("allUsers");
+    allUsers.innerHTML = "";
+    getUsers().forEach(u => {
+        let li = document.createElement("li");
+        li.textContent = `${u.email} - Role: ${u.role}`;
+        allUsers.appendChild(li);
+    });
+}
+
+function deleteUser(email){
+    if(session.role !== "admin" || !email) return;
+    let users = getUsers().filter(u => u.email !== email);
+    saveUsers(users);
+    loadAdminPanel();
+}
+
+/* QIBLA (inchangée) */
+function getLocation(){
+    navigator.geolocation.getCurrentPosition(pos => {
+        const q = calcQibla(pos.coords.latitude, pos.coords.longitude);
+        alert("Direction Qibla : " + q.toFixed(1) + "°");
+    }, () => alert("Localisation refusée"));
+}
+
+function calcQibla(lat, lon){
+    const kLat = 21.4225 * Math.PI / 180;
+    const kLon = 39.8262 * Math.PI / 180;
+    lat *= Math.PI / 180; lon *= Math.PI / 180;
+    const y = Math.sin(kLon - lon);
+    const x = Math.cos(lat) * Math.tan(kLat) - Math.sin(lat) * Math.cos(kLon - lon);
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+/* Recherche globale (simulée) */
+document.getElementById("globalSearch").addEventListener("input", e => {
+    alert(`Recherche pour: ${e.target.value}`);
+});
+</script>
+
+</body>
+</html>
